@@ -1,7 +1,6 @@
 {
   "name": "kivibot-plugin-youdao",
   "version": "1.0.0",
-  "private": true,
   "description": "QQ 机器人框架 KiviBot 的有道翻译插件",
   "main": "lib/index.js",
   "repository": "KiviBotLab/kivibot-plugin-youdao",
