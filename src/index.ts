@@ -2,7 +2,7 @@ import { KiviPlugin } from '@kivibot/core'
 
 import { fetchTranslation } from './fetchTranslation'
 
-const plugin = new KiviPlugin('有道翻译', '1.0.0')
+const plugin = new KiviPlugin('有道翻译', '1.1.0')
 
 const langs = [
   { match: /^翻译/, target: 'auto' },
@@ -27,7 +27,7 @@ const langs = [
 plugin.onMounted(() => {
   langs.forEach(lang => {
     plugin.onMatch(lang.match, async event => {
-      const text = event.raw_message.replace(/\{.*\}/g, '').replace('翻译', '')
+      const text = event.raw_message.replace(/\{.*\}/g, '').replace(lang.match, '')
 
       if (!text) {
         event.reply('翻译内容不能为空', true)
@@ -35,8 +35,9 @@ plugin.onMounted(() => {
 
       try {
         const res = await fetchTranslation(text, lang.target)
-        await event.reply(res || '找不到翻译结果')
-      } catch {
+        await event.reply(res || '找不到翻译结果', true)
+      } catch (e) {
+        plugin.throwPluginError(String(e))
         await event.reply('翻译遇到错误，稍后再试试吧', true)
       }
     })

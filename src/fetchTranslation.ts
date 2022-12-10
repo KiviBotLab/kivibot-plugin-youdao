@@ -23,7 +23,7 @@ const payload = {
 }
 
 const headers = {
-  Host: 'dict.youdao.com',
+  Host: 'fanyi.youdao.com',
   Origin: 'https://fanyi.youdao.com',
   'User-Agent': `Mozilla/${appVersion}`,
   Referer: 'https://fanyi.youdao.com/',
@@ -53,11 +53,12 @@ export async function fetchTranslation(text: string, to = 'auto', from = 'auto')
   const { data: _data, status } = await http.post(api, postData, { headers })
 
   if (status !== 200) {
+    console.log(_data)
     throw new Error('Youdao API Error')
   }
 
-  const transRes = _data?.translateResult
+  const transRes = _data?.translateResult?.map((e: any) => e[0]?.tgt || '')
   const smartRes = _data?.smartResult
 
-  return smartRes?.entries?.join('') || transRes?.map((e: any) => e[0]?.tgt || '').join('\n')
+  return smartRes?.entries?.filter(Boolean).join('') || transRes?.filter(Boolean).join('\n')
 }
