@@ -59,6 +59,7 @@ export async function fetchTranslation(text: string, to = 'auto', from = 'auto')
 
   const transRes = _data?.translateResult?.map((e: any) => e[0]?.tgt || '')
   const smartRes = _data?.smartResult
+  const res = smartRes?.entries?.filter(Boolean).join('\n') || transRes?.filter(Boolean).join('\n')
 
-  return smartRes?.entries?.filter(Boolean).join('') || transRes?.filter(Boolean).join('\n')
+  return res.trim()
 }

@@ -1,6 +1,7 @@
 # 有道翻译 for KiviBot
 
 ![npm (scoped)](https://img.shields.io/npm/v/kivibot-plugin-youdao?color=527dec&label=kivibot-plugin-youdao&style=flat-square)
+[![dm](https://shields.io/npm/dm/kivibot-plugin-youdao?style=flat-square)](https://www.npmjs.com/package/kivibot-plugin-youdao)
 
 `KiviBot` 的 [有道翻译](https://fanyi.youdao.com/) 插件。
 
@@ -24,4 +25,4 @@
 译韩你叫什么名字
 ```
 
-使用详情参考：[源代码](https://github.com/KiviBotLab/kivibot-plugin-youdao/blob/main/src/index.ts#L7-L25)
+使用详情参考：[源代码](https://github.com/KiviBotLab/kivibot-plugin-youdao/blob/main/src/index.ts#L8-L25)
