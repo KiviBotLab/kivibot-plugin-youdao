@@ -1,65 +1,74 @@
-import { http } from '@kivibot/core'
 import crypto from 'node:crypto'
+import { http, md5, qs } from '@kivibot/core'
 
-const md5 = (value: string) => crypto.createHash('md5').update(value).digest('hex')
+const key = 'ydsecret://query/key/B*RGygVywfNBwpmBaZg*WT7SIOUP2T0C9WHMZN39j^DAdaZhAnxvGcCY6VYFwnHl'
+const iv = 'ydsecret://query/iv/C@lZe2YzHtZ2CYgaXKSVfsb7Y4QWHjITPPZ0nQp87fBeJ!Iv6v^6fvi2WN@bYpJ4'
 
-const qs = (obj: Object, encode: boolean = false) => {
-  let res = ''
-  for (const [k, v] of Object.entries(obj)) res += `${k}=${encode ? encodeURIComponent(v) : v}&`
-  return res.slice(0, res.length - 1)
-}
+const keyApi = 'https://dict.youdao.com/webtranslate/key'
+const translationApi = 'https://dict.youdao.com/webtranslate'
 
-const appVersion =
-  '5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'
-
-const payload = {
-  bv: md5(appVersion),
-  client: 'fanyideskweb',
-  doctype: 'json',
-  version: '2.1',
-  keyfrom: 'fanyi.web',
-  action: 'FY_BY_DEFAULT',
-  smartresult: 'dict'
-}
+const cookie =
+  'OUTFOX_SEARCH_USER_ID_NCOO=1437677400.9626737; OUTFOX_SEARCH_USER_ID=1833413818@39.168.86.181'
 
 const headers = {
-  Host: 'fanyi.youdao.com',
-  Origin: 'https://fanyi.youdao.com',
-  'User-Agent': `Mozilla/${appVersion}`,
-  Referer: 'https://fanyi.youdao.com/',
-  'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-  Cookie: `OUTFOX_SEARCH_USER_ID=-164878527@10.108.162.134; OUTFOX_SEARCH_USER_ID_NCOO=1971860328.1620116";`
+  cookie,
+  referer: 'https://fanyi.youdao.com/',
+  'content-type': 'application/x-www-form-urlencoded'
 }
 
-const api = 'https://fanyi.youdao.com/translate_o?smartresult=dict&smartresult=rule'
-const key = 'Ygy_4c=r#e#4EX^NUGUc5'
+const alloc = (key: string) => Buffer.alloc(16, md5(key))
 
-export async function fetchTranslation(text: string, to = 'auto', from = 'auto') {
-  const i = text
-  const lts = '' + new Date().getTime()
-  const salt = lts + parseInt(String(10 * Math.random()), 10)
-  const sign = md5(payload.client + i + salt + key)
+const AesDecode = (value: string) => {
+  const encoder = crypto.createDecipheriv('aes-128-cbc', alloc(key), alloc(iv))
+  return encoder.update(value, 'base64', 'utf-8') + encoder.final('utf-8')
+}
 
-  const postData = qs({
-    i,
-    lts,
-    sign,
-    salt,
-    from,
-    to,
-    ...payload
-  })
+function getSign(now: string, secrectkey: string) {
+  return md5(`client=fanyideskweb&mysticTime=${now}&product=webfanyi&key=${secrectkey}`, 'hex')
+}
 
-  const { data: _data, status } = await http.post(api, postData, { headers })
+function getParams(secrectkey: string) {
+  const now = '' + Date.now()
 
-  if (status !== 200) {
-    console.log(_data)
-    throw new Error('Youdao API Error')
+  return {
+    sign: getSign(now, secrectkey),
+    client: 'fanyideskweb',
+    product: 'webfanyi',
+    appVersion: '1.0.0',
+    vendor: 'web',
+    pointParam: 'client,mysticTime,product',
+    mysticTime: now,
+    keyfrom: 'fanyi.web'
+  }
+}
+
+async function getSecretKey() {
+  const params = {
+    keyid: 'webfanyi-key-getter',
+    ...getParams('asdjnjfenknafdfsdfsd')
   }
 
-  const transRes = _data?.translateResult?.map((e: any) => e[0]?.tgt || '')
-  const smartRes = _data?.smartResult
-  const res = smartRes?.entries?.filter(Boolean).join('\n') || transRes?.filter(Boolean).join('\n')
+  const { data } = await http.get(keyApi, { params })
 
-  return res.trim()
+  return data?.data?.secretKey || ''
+}
+
+export async function fetchTranslation(text: string, to = 'auto', from = 'auto') {
+  const key = await getSecretKey()
+
+  const payload = {
+    from,
+    to,
+    i: text,
+    dictResult: true,
+    keyid: 'webfanyi',
+    ...getParams(key)
+  }
+
+  const { data } = await http.post(translationApi, qs(payload), { headers })
+
+  const decoded = JSON.parse(AesDecode(data))
+  const tgts = decoded?.translateResult?.flat(Infinity)?.map((e: any) => e.tgt) || []
+
+  return tgts.filter(Boolean).join('').trim()
 }

@@ -5,7 +5,7 @@ import { fetchTranslation } from './fetchTranslation'
 const { version } = require('../package.json')
 const plugin = new KiviPlugin('有道翻译', version)
 
-const langs = [
+export const langs = [
   { match: /^翻译/, target: 'auto' },
   { match: /^译中/, target: 'zh-CHS' },
   { match: /^译繁/, target: 'zh-CHT' },
@@ -25,6 +25,12 @@ const langs = [
 ]
 
 plugin.onMounted(() => {
+  plugin.onMatch('有道翻译', e => {
+    const list = langs.map(({ match }) => `${match.source.replace('^', '')}<翻译内容>`)
+    const msg = ['〓 有道翻译 〓', ...list].join('\n')
+    e.reply(msg, true)
+  })
+
   langs.forEach(lang => {
     plugin.onMatch(lang.match, async event => {
       const text = event.raw_message.replace(lang.match, '')
@@ -38,7 +44,7 @@ plugin.onMounted(() => {
         await event.reply(res || '找不到翻译结果', true)
       } catch (e) {
         plugin.throwPluginError(String(e))
-        await event.reply('翻译遇到错误，稍后再试试吧', true)
+        await event.reply('翻译服务异常，请查看日志', true)
       }
     })
   })
