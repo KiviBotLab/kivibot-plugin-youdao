@@ -27,8 +27,7 @@ export const langs = [
 plugin.onMounted(() => {
   plugin.onMatch('有道翻译', e => {
     const list = langs.map(({ match }) => `${match.source.replace('^', '')}<翻译内容>`)
-    const msg = ['〓 有道翻译 〓', ...list].join('\n')
-    e.reply(msg, true)
+    e.reply(list.join('\n'), true)
   })
 
   langs.forEach(lang => {
