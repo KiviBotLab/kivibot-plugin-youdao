@@ -25,7 +25,7 @@ export const langs = [
 ]
 
 plugin.onMounted(() => {
-  plugin.onMatch('有道翻译', e => {
+  plugin.onMatch(/^\s*(有道)?翻译\s*$/, e => {
     const list = langs.map(({ match }) => `${match.source.replace('^', '')}<翻译内容>`)
     e.reply(list.join('\n'), true)
   })
@@ -34,16 +34,15 @@ plugin.onMounted(() => {
     plugin.onMatch(lang.match, async event => {
       const text = event.raw_message.replace(lang.match, '')
 
-      if (!text) {
-        return event.reply('翻译内容不能为空', true)
-      }
+      if (!text) return
 
       try {
         const res = await fetchTranslation(text, lang.target)
         await event.reply(res || '找不到翻译结果', true)
-      } catch (e) {
-        plugin.throwPluginError(String(e))
-        await event.reply('翻译服务异常，请查看日志', true)
+      } catch (e: any) {
+        const msg = e?.raw_message ?? e.stack ?? JSON.stringify(e, null, 2)
+        plugin.throwPluginError(msg)
+        await event.reply(`翻译服务异常: ${msg}`, true)
       }
     })
   })
