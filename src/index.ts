@@ -24,17 +24,20 @@ export const langs = [
   { match: /^译葡/, target: 'pt' }
 ]
 
+const menu = langs.map(({ match }) => `${match.source.replace('^', '')}<待翻译内容>`).join('\n')
+
 plugin.onMounted(() => {
-  plugin.onMatch(/^\s*(有道)?翻译\s*$/, e => {
-    const list = langs.map(({ match }) => `${match.source.replace('^', '')}<翻译内容>`)
-    e.reply(list.join('\n'), true)
+  plugin.onMatch(/^有道(翻译)?$/, event => {
+    event.reply(menu, true)
   })
 
   langs.forEach(lang => {
     plugin.onMatch(lang.match, async event => {
       const text = event.raw_message.replace(lang.match, '')
 
-      if (!text) return
+      if (!text) {
+        event.reply(menu, true)
+      }
 
       try {
         const res = await fetchTranslation(text, lang.target)
